@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/homenoc/jpnic-go v0.5.1-0.20220114190904-17de75229604
 	github.com/mattn/go-sqlite3 v1.14.10
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

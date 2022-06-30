@@ -2,6 +2,19 @@ package main
 
 import "time"
 
+type JPNICCert struct {
+	ID       int
+	Name     string
+	IsActive bool
+	IsIPv6   bool
+	ASN      int
+	CAPath   string
+	CertPath string
+	KeyPath  string
+	P12Pass  string
+	P12Path  string
+}
+
 type ResultV4List struct {
 	ID                 int
 	GetTime            time.Time
@@ -40,4 +53,12 @@ type JPNICHandle struct {
 	DivisionEn  string
 	IsIPv6      string
 	Asn         string
+}
+
+type Config struct {
+	NextTime uint `yaml:"next_time"`
+	DB       struct {
+		Type string `yaml:"type"`
+		Path string `yaml:"path"`
+	} `yaml:"db"`
 }

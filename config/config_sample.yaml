@@ -1,0 +1,5 @@
+---
+next_time: 5
+db:
+  type: sqlite3
+  path: "./db.sqlite3"
