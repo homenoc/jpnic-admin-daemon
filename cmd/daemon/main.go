@@ -3,17 +3,19 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/homenoc/jpnic-go"
+	"github.com/homenoc/jpnic-gui-daemon/pkg/core"
+	"github.com/homenoc/jpnic-gui-daemon/pkg/core/jpnic"
 	_ "github.com/mattn/go-sqlite3"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"net"
 	"strconv"
 	"time"
 )
 
 func main() {
-	config := Config{
+	config := core.Config{
 		NextTime: 10,
 		DB: struct {
 			Type string `yaml:"type"`
@@ -42,7 +44,7 @@ func main() {
 		case <-getInfoTick.C:
 			log.Println("get Info Tick")
 			var sqliteOption = "file:" + config.DB.Path + "?cache=shared&mode=rwc&_journal_mode=WAL"
-			now := time.Now()
+			now := time.Now().UTC()
 			timeDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
 			var db *sql.DB
@@ -59,11 +61,9 @@ func main() {
 			}
 			defer certRows.Close()
 
-			var jpnicCert JPNICCert
+			var jpnicCert core.JPNICCert
 
-			log.Println(1)
 			for certRows.Next() {
-				log.Println(1.5)
 				err = certRows.Scan(
 					&jpnicCert.ID,
 					&jpnicCert.Name,
@@ -79,7 +79,6 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				log.Println(2)
 
 				jpnicConfig := jpnic.Config{
 					URL:         "https://iphostmaster.nic.ad.jp/jpnic/certmemberlogin.do",
@@ -88,14 +87,12 @@ func main() {
 					CAFilePath:  jpnicCert.CAPath,
 				}
 
-				log.Println(jpnicConfig)
-
 				rows, err := db.Query("SELECT id, ip_address, address, address_en, recep_number FROM result_v4list WHERE get_date > $1 AND asn_id = $2", timeDate, jpnicCert.ASN)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				var list ResultV4List
+				var list core.ResultV4List
 				for rows.Next() {
 					err = rows.Scan(&list.ID, &list.IPAddress, &list.Address, &list.AddressEn, &list.RecepNumber)
 					if err != nil {
@@ -108,7 +105,6 @@ func main() {
 					}
 				}
 
-				log.Println(list)
 				rows.Close()
 
 				// イレギュラー処理
@@ -119,7 +115,7 @@ func main() {
 					if err != nil {
 						log.Fatal(err)
 					}
-					_, err = upd.Exec(time.Now(), "　", "　", "　", jpnicCert.ASN, list.ID)
+					_, err = upd.Exec(time.Now().UTC(), "　", "　", "　", jpnicCert.ASN, list.ID)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -129,13 +125,41 @@ func main() {
 				}
 
 				// 全体取得データがない場合
-				if (list == ResultV4List{}) {
-					data, _, err := jpnicConfig.SearchIPv4(jpnic.SearchIPv4{Myself: true, IsDetail: false})
-					if err != nil {
-						log.Fatal(err)
+				if (list == core.ResultV4List{}) {
+					// 1000件以上の場合も取得
+					var infos []jpnic.InfoIPv4
+					isOverList := true
+					addressRange := ""
+
+					for isOverList {
+						filter := jpnic.SearchIPv4{
+							IsDetail: false,
+							Option1:  nil,
+						}
+						if addressRange != "" {
+							filter.IPAddress = addressRange
+						}
+						data, err := jpnicConfig.SearchIPv4(filter)
+						if err != nil {
+							log.Println(err)
+							continue
+						}
+
+						isOverList = data.IsOverList
+
+						if isOverList {
+							lastIPAddress, _, err := net.ParseCIDR(data.InfoIPv4[len(data.InfoIPv4)-1].IPAddress)
+							if err != nil {
+								log.Fatal(err)
+							}
+
+							addressRange = lastIPAddress.String() + "-255.255.255.255"
+						}
+
+						infos = append(infos, data.InfoIPv4...)
 					}
 
-					for _, tmp := range data {
+					for _, tmp := range infos {
 						var id string
 						layout := "2006/01/02"
 						assignDate, _ := time.Parse(layout, tmp.AssignDate)
@@ -146,10 +170,30 @@ func main() {
 						}
 						defer ins.Close()
 
-						ins.QueryRow(time.Now(), tmp.IPAddress, tmp.Size, tmp.NetworkName, assignDate, tmp.ReturnDate, tmp.InfoDetail.Org, tmp.InfoDetail.OrgEn, tmp.InfoDetail.Ryakusho, tmp.RecepNo, tmp.DeliNo, "", "", tmp.InfoDetail.PostCode, tmp.InfoDetail.Address, tmp.InfoDetail.AddressEn, tmp.InfoDetail.NameServer, tmp.InfoDetail.DSRecord, tmp.InfoDetail.NotifyAddress, tmp.InfoDetail.AdminJPNICHandle, "59105").Scan(&id)
+						ins.QueryRow(
+							time.Now().UTC(),
+							tmp.IPAddress,
+							tmp.Size,
+							tmp.NetworkName,
+							assignDate,
+							tmp.ReturnDate,
+							tmp.InfoDetail.Org,
+							tmp.InfoDetail.OrgEn,
+							tmp.InfoDetail.Ryakusho,
+							tmp.RecepNo,
+							tmp.DeliNo,
+							tmp.Type,
+							tmp.Division,
+							tmp.InfoDetail.PostCode,
+							tmp.InfoDetail.Address,
+							tmp.InfoDetail.AddressEn,
+							tmp.InfoDetail.NameServer,
+							tmp.InfoDetail.DSRecord,
+							tmp.InfoDetail.NotifyAddress,
+							tmp.InfoDetail.AdminJPNICHandle,
+							jpnicCert.ASN,
+						).Scan(&id)
 					}
-
-					log.Println("全体取得データがない場合")
 				} else {
 					// イレギュラー処理
 					if list.RecepNumber == "" {
@@ -159,6 +203,7 @@ func main() {
 
 					// 同じ受付番号がないか確認
 					var listIDs []string
+					//log.Println(timeDate, jpnicCert.ASN, list.RecepNumber)
 					rows, err = db.Query("SELECT id FROM result_v4list WHERE get_date > $1 AND asn_id = $2 AND address = '' AND address_en = '' AND recep_number = $3", timeDate, jpnicCert.ASN, list.RecepNumber)
 					if err != nil {
 						log.Fatal(err)
@@ -183,7 +228,7 @@ func main() {
 
 					handles := make(map[string]int)
 					var strHandles []string
-					var handle JPNICHandle
+					var handle core.JPNICHandle
 					for rows.Next() {
 						err = rows.Scan(&handle.ID, &handle.JPNICHandle, &handle.GetTime)
 						if err != nil {
@@ -196,20 +241,20 @@ func main() {
 						fmt.Printf("ID: %d(%s),Handle: %s\n", handle.ID, handle.GetTime, handle.JPNICHandle)
 					}
 
-					data, jpnicHandles, err := jpnicConfig.SearchIPv4(jpnic.SearchIPv4{
-						Myself:    true,
+					data, err := jpnicConfig.SearchIPv4(jpnic.SearchIPv4{
 						IsDetail:  true,
 						Option1:   strHandles,
 						IPAddress: list.IPAddress,
 						RecepNo:   list.RecepNumber,
 					})
 					if err != nil {
-						log.Fatal(err)
+						log.Println(err)
+						continue
 					}
 
 					// jpnic_handle DBに追加処理
-					if len(jpnicHandles) != 0 {
-						for _, jpnicHandle := range jpnicHandles {
+					if len(data.JPNICHandleDetail) != 0 {
+						for _, jpnicHandle := range data.JPNICHandleDetail {
 
 							var jpnicHandleID string
 
@@ -219,21 +264,48 @@ func main() {
 							if err != nil {
 								log.Fatal(err)
 							}
-							ins.QueryRow(false, time.Now(), jpnicHandle.JPNICHandle, jpnicHandle.Name, jpnicHandle.NameEn, jpnicHandle.Email, jpnicHandle.Org, jpnicHandle.OrgEn, jpnicHandle.Division, jpnicHandle.DivisionEn, jpnicHandle.Tel, jpnicHandle.Fax, updateDate, jpnicCert.ASN).Scan(&jpnicHandleID)
+							ins.QueryRow(
+								false,
+								time.Now().UTC(),
+								jpnicHandle.JPNICHandle,
+								jpnicHandle.Name,
+								jpnicHandle.NameEn,
+								jpnicHandle.Email,
+								jpnicHandle.Org,
+								jpnicHandle.OrgEn,
+								jpnicHandle.Division,
+								jpnicHandle.DivisionEn,
+								jpnicHandle.Tel,
+								jpnicHandle.Fax,
+								updateDate,
+								jpnicCert.ASN,
+							).Scan(&jpnicHandleID)
 
 							ins.Close()
 
 							handles[jpnicHandle.JPNICHandle], _ = strconv.Atoi(jpnicHandleID)
 						}
 					}
-
 					// result_v4list DBにUpdate処理
 					for _, listID := range listIDs {
 						upd, err := db.Prepare("UPDATE result_v4list SET get_date = ?, org = ?, org_en = ?, post_code = ?, address = ?, address_en = ?, name_server = ?, ds_record = ?, notify_address = ?, admin_jpnic_id = ?, asn_id = ? WHERE id = ?")
 						if err != nil {
 							log.Fatal(err)
 						}
-						_, err = upd.Exec(time.Now(), data[0].InfoDetail.Org, data[0].InfoDetail.OrgEn, data[0].InfoDetail.PostCode, data[0].InfoDetail.Address, data[0].InfoDetail.AddressEn, data[0].InfoDetail.NameServer, data[0].InfoDetail.DSRecord, data[0].InfoDetail.NotifyAddress, handles[data[0].InfoDetail.AdminJPNICHandle], jpnicCert.ASN, listID)
+						_, err = upd.Exec(
+							time.Now().UTC(),
+							data.InfoIPv4[0].InfoDetail.Org,
+							data.InfoIPv4[0].InfoDetail.OrgEn,
+							data.InfoIPv4[0].InfoDetail.PostCode,
+							data.InfoIPv4[0].InfoDetail.Address,
+							data.InfoIPv4[0].InfoDetail.AddressEn,
+							data.InfoIPv4[0].InfoDetail.NameServer,
+							data.InfoIPv4[0].InfoDetail.DSRecord,
+							data.InfoIPv4[0].InfoDetail.NotifyAddress,
+							handles[data.InfoIPv4[0].InfoDetail.AdminJPNICHandle],
+							jpnicCert.ASN,
+							listID,
+						)
 						if err != nil {
 							log.Fatal(err)
 						}
@@ -247,15 +319,13 @@ func main() {
 							log.Fatal(err)
 						}
 
-						ins.Exec(listID, handles[data[0].InfoDetail.TechJPNICHandle])
+						ins.Exec(listID, handles[data.InfoIPv4[0].InfoDetail.TechJPNICHandle])
 
 						ins.Close()
 						//}
 					}
-					log.Println("全体取得データがある場合")
 				}
 			}
-			log.Println(1000)
 			certRows.Close()
 		}
 	}
