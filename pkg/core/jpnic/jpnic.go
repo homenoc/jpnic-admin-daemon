@@ -13,11 +13,11 @@ var contentType = "application/x-www-form-urlencoded"
 var baseURL = "https://iphostmaster.nic.ad.jp"
 
 type Config struct {
-	URL         string
-	PfxFilePath string
-	PfxPass     string
-	CAFilePath  string
-	DB          *sql.DB
+	URL       string
+	CA        string
+	P12Base64 string
+	P12Pass   string
+	DB        *sql.DB
 }
 
 func (c *Config) SearchIPv4(search SearchIPv4) (*ResultSearchIPv4, error) {

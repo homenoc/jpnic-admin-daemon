@@ -70,10 +70,8 @@ func main() {
 					&jpnicCert.IsActive,
 					&jpnicCert.IsIPv6,
 					&jpnicCert.ASN,
-					&jpnicCert.CAPath,
-					&jpnicCert.CertPath,
-					&jpnicCert.KeyPath,
-					&jpnicCert.P12Path,
+					&jpnicCert.CA,
+					&jpnicCert.P12Base64,
 					&jpnicCert.P12Pass,
 				)
 				if err != nil {
@@ -81,10 +79,13 @@ func main() {
 				}
 
 				jpnicConfig := jpnic.Config{
-					URL:         "https://iphostmaster.nic.ad.jp/jpnic/certmemberlogin.do",
-					PfxFilePath: jpnicCert.P12Path,
-					PfxPass:     jpnicCert.P12Pass,
-					CAFilePath:  jpnicCert.CAPath,
+					URL:       "https://iphostmaster.nic.ad.jp/jpnic/certmemberlogin.do",
+					CA:        jpnicCert.CA,
+					P12Base64: jpnicCert.P12Base64,
+					P12Pass:   jpnicCert.P12Pass,
+					//PfxFilePath: jpnicCert.P12Path,
+					//PfxPass:     jpnicCert.P12Pass,
+					//CAFilePath:  jpnicCert.CAPath,
 				}
 
 				rows, err := db.Query("SELECT id, ip_address, address, address_en, recep_number FROM result_v4list WHERE get_date > $1 AND asn_id = $2", timeDate, jpnicCert.ASN)

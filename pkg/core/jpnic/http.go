@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/crypto/pkcs12"
@@ -49,24 +50,20 @@ func (c *Config) initAccess(menuName string) (*http.Client, string, error) {
 	jar.SetCookies(urlObj, cookies)
 
 	// Load .p12 File
-	p12Bytes, err := ioutil.ReadFile(c.PfxFilePath)
+	p12Bytes, err := base64.RawStdEncoding.DecodeString(c.P12Base64)
 	if err != nil {
 		return nil, "", err
 	}
 
 	// .p12 decode
-	key, cert, err := pkcs12.Decode(p12Bytes, c.PfxPass)
+	key, cert, err := pkcs12.Decode(p12Bytes, c.P12Pass)
 	if err != nil {
 		return nil, "", err
 	}
 
 	// Load CA
-	caCertBytes, err := ioutil.ReadFile(c.CAFilePath)
-	if err != nil {
-		return nil, "", err
-	}
 	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCertBytes)
+	caCertPool.AppendCertsFromPEM([]byte(c.CA))
 
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{{

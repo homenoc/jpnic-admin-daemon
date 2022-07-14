@@ -3,16 +3,18 @@ package core
 import "time"
 
 type JPNICCert struct {
-	ID       int
-	Name     string
-	IsActive bool
-	IsIPv6   bool
-	ASN      int
-	CAPath   string
-	CertPath string
-	KeyPath  string
-	P12Pass  string
-	P12Path  string
+	ID        int
+	Name      string
+	IsActive  bool
+	IsIPv6    bool
+	ASN       int
+	CA        string
+	P12Base64 string
+	P12Pass   string
+	CAPath    string
+	CertPath  string
+	P12Path   string
+	KeyPath   string
 }
 
 type ResultV4List struct {
