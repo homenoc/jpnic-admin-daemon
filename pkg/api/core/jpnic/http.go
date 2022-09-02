@@ -50,7 +50,7 @@ func (c *Config) initAccess(menuName string) (*http.Client, string, error) {
 	jar.SetCookies(urlObj, cookies)
 
 	// Load .p12 File
-	p12Bytes, err := base64.RawStdEncoding.DecodeString(c.P12Base64)
+	p12Bytes, err := base64.StdEncoding.DecodeString(c.P12Base64)
 	if err != nil {
 		return nil, "", err
 	}

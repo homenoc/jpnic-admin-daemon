@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  config-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./config.json:/opt/config.json
+      - ./template.json:/opt/template.json

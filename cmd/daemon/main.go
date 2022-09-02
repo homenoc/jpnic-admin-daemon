@@ -3,8 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/homenoc/jpnic-gui-daemon/pkg/core"
-	"github.com/homenoc/jpnic-gui-daemon/pkg/core/jpnic"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/homenoc/jpnic-admin-daemon/pkg/api/core"
+	"github.com/homenoc/jpnic-admin-daemon/pkg/api/core/jpnic"
 	_ "github.com/mattn/go-sqlite3"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -20,6 +21,11 @@ func main() {
 		DB: struct {
 			Type string `yaml:"type"`
 			Path string `yaml:"path"`
+			IP   string `yaml:"ip"`
+			Port uint   `yaml:"port"`
+			Name string `yaml:"name"`
+			User string `yaml:"user"`
+			Pass string `yaml:"pass"`
 		}{},
 	}
 	var getConfTimer uint = 5
@@ -43,12 +49,27 @@ func main() {
 			}
 		case <-getInfoTick.C:
 			log.Println("get Info Tick")
-			var sqliteOption = "file:" + config.DB.Path + "?cache=shared&mode=rwc&_journal_mode=WAL"
+			var dbOption = ""
+			var dbDriver = ""
+
+			switch config.DB.Type {
+			case "sqlite":
+				dbDriver = "sqlite3"
+				dbOption = "file:" + config.DB.Path + "?cache=shared&mode=rwc&_journal_mode=WAL"
+			case "mysql":
+				dbDriver = "mysql"
+				dbOption = config.DB.User + ":" + config.DB.Pass + "@(" +
+					config.DB.Name + ":" + strconv.Itoa(int(config.DB.Port)) + ")/" + config.DB.Name
+			default:
+				log.Fatal("Invalid database config.")
+				return
+			}
+
 			now := time.Now().UTC()
 			timeDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
 			var db *sql.DB
-			db, err := sql.Open(config.DB.Type, sqliteOption)
+			db, err := sql.Open(dbDriver, dbOption)
 			if err != nil {
 				log.Fatal(err)
 			}
