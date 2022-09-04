@@ -1,14 +1,13 @@
 package config
 
 import (
-	"encoding/json"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 )
 
 type Config struct {
-	NextTime string   `yaml:"next_time"`
-	Port     int      `yaml:"port"`
+	CaURL    string   `yaml:"ca_url"`
 	Database Database `yaml:"database"`
 }
 
@@ -26,7 +25,7 @@ var Conf Config
 var ConfigPath string
 
 func GetConfig(inputConfPath string) error {
-	configPath := "./config.json"
+	configPath := "./config.yaml"
 	if inputConfPath != "" {
 		configPath = inputConfPath
 	}
@@ -36,10 +35,13 @@ func GetConfig(inputConfPath string) error {
 		return err
 	}
 	var data Config
-	err = json.Unmarshal(file, &data)
+	err = yaml.Unmarshal(file, &data)
 	if err != nil {
 		log.Fatal(err)
 	}
 	Conf = data
+	log.Println(Conf)
+	ParseDatabase()
+
 	return nil
 }

@@ -1,5 +1,5 @@
 ---
-next_time: 5
-db:
+ca_url: "http://localhost:8000/ca"
+database:
   type: sqlite3
   path: "./db.sqlite3"

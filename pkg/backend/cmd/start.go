@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/homenoc/jpnic-admin-daemon/pkg/api"
+	"github.com/homenoc/jpnic-admin-daemon/pkg/api/core"
 	"github.com/homenoc/jpnic-admin-daemon/pkg/api/core/tool/config"
 	"github.com/spf13/cobra"
 	"log"
@@ -22,7 +22,7 @@ var startCmd = &cobra.Command{
 			log.Fatal("getting config", err)
 		}
 
-		api.RestAPI()
+		core.Start()
 
 		log.Println("end")
 	},

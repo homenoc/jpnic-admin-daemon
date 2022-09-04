@@ -330,3 +330,9 @@ type ResultSearchIPv4 struct {
 	InfoIPv4          []InfoIPv4
 	JPNICHandleDetail []JPNICHandleDetail
 }
+
+type ResultSearchIPv6 struct {
+	IsOverList        bool
+	InfoIPv6          []InfoIPv6
+	JPNICHandleDetail []JPNICHandleDetail
+}

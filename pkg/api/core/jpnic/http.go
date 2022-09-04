@@ -63,7 +63,7 @@ func (c *Config) initAccess(menuName string) (*http.Client, string, error) {
 
 	// Load CA
 	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM([]byte(c.CA))
+	caCertPool.AppendCertsFromPEM(c.CA)
 
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{{
