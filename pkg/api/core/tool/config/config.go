@@ -3,7 +3,6 @@ package config
 import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
-	"log"
 )
 
 type Config struct {
@@ -37,10 +36,9 @@ func GetConfig(inputConfPath string) error {
 	var data Config
 	err = yaml.Unmarshal(file, &data)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	Conf = data
-	log.Println(Conf)
 	ParseDatabase()
 
 	return nil
