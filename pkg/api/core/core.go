@@ -422,7 +422,7 @@ func GetJPNIC(cert JPNICCert) {
 		// IPv4
 		rows, err := db.Query("SELECT id, ip_address, address, address_en, recep_number FROM result_v4list WHERE get_date > $1 AND asn_id = $2", timeDate, cert.ASN)
 		if err != nil {
-			log.Println(err)
+			log.Println("Error", "query result_v4_list", err)
 			return
 		}
 
@@ -430,7 +430,7 @@ func GetJPNIC(cert JPNICCert) {
 		for rows.Next() {
 			err = rows.Scan(&list.ID, &list.IPAddress, &list.Address, &list.AddressEn, &list.RecepNumber)
 			if err != nil {
-				log.Println(err)
+				log.Println("Error", "scan result_v4_list", err)
 				return
 			}
 
@@ -448,12 +448,12 @@ func GetJPNIC(cert JPNICCert) {
 			fmt.Println("イレギュラー処理")
 			upd, err := db.Prepare("UPDATE result_v4list SET get_date = ?, address = ?, address_en = ?, recep_number = ?, asn_id = ? WHERE id = ?")
 			if err != nil {
-				log.Println(err)
+				log.Println("Error", "prepare result_v4_list", err)
 				return
 			}
 			_, err = upd.Exec(time.Now().UTC(), "　", "　", "　", cert.ASN, list.ID)
 			if err != nil {
-				log.Println(err)
+				log.Println("Error", "update result_v4_list", err)
 				return
 			}
 			upd.Close()
@@ -478,7 +478,7 @@ func GetJPNIC(cert JPNICCert) {
 				}
 				data, err := jpnicConfig.SearchIPv4(filter)
 				if err != nil {
-					log.Println(err)
+					log.Println("Error", "SearchIPv4", err)
 					continue
 				}
 
@@ -487,7 +487,7 @@ func GetJPNIC(cert JPNICCert) {
 				if isOverList {
 					lastIPAddress, _, err := net.ParseCIDR(data.InfoIPv4[len(data.InfoIPv4)-1].IPAddress)
 					if err != nil {
-						log.Println(err)
+						log.Println("Error", "parseCIDR", err)
 						return
 					}
 
@@ -504,7 +504,7 @@ func GetJPNIC(cert JPNICCert) {
 
 				ins, err := db.Prepare("INSERT INTO result_v4list (get_date, ip_address, size, network_name, assign_date, return_date, org, org_en, resource_admin_short, recep_number, deli_number, type, division, post_code, address, address_en, name_server, ds_record, notify_address, admin_jpnic_id, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
 				if err != nil {
-					log.Println(err)
+					log.Println("Error", "prepare result_v4list", err)
 					return
 				}
 				defer ins.Close()
@@ -545,7 +545,7 @@ func GetJPNIC(cert JPNICCert) {
 			//log.Println(timeDate, jpnicCert.ASN, list.RecepNumber)
 			rows, err = db.Query("SELECT id FROM result_v4list WHERE get_date > $1 AND asn_id = $2 AND address = '' AND address_en = '' AND recep_number = $3", timeDate, cert.ASN, list.RecepNumber)
 			if err != nil {
-				log.Println(err)
+				log.Println("Error", "query result_v4list", err)
 				return
 			}
 
@@ -553,7 +553,7 @@ func GetJPNIC(cert JPNICCert) {
 				var id string
 				err = rows.Scan(&id)
 				if err != nil {
-					log.Println(err)
+					log.Println("Error", "scan result_v4list", err)
 					return
 				}
 				listIDs = append(listIDs, id)
@@ -563,7 +563,7 @@ func GetJPNIC(cert JPNICCert) {
 			// JPNIC Handle探索
 			rows, err = db.Query("SELECT id,jpnic_handle,get_date FROM result_jpnichandle WHERE get_date > $1 AND asn_id = $2 AND is_ipv6 = $3", timeDate, cert.ASN, false)
 			if err != nil {
-				log.Println(err)
+				log.Println("Error", "query result_jpnichandle", err)
 				return
 			}
 			defer rows.Close()
@@ -574,7 +574,7 @@ func GetJPNIC(cert JPNICCert) {
 			for rows.Next() {
 				err = rows.Scan(&handle.ID, &handle.JPNICHandle, &handle.GetTime)
 				if err != nil {
-					log.Println(err)
+					log.Println("Error", "scan result_jpnichandle", err)
 					return
 				}
 
@@ -591,7 +591,7 @@ func GetJPNIC(cert JPNICCert) {
 				RecepNo:   list.RecepNumber,
 			})
 			if err != nil {
-				log.Println(err)
+				log.Println("Error", "searchIPv4(detail)", err)
 			}
 
 			// jpnic_handle DBに追加処理
@@ -603,7 +603,7 @@ func GetJPNIC(cert JPNICCert) {
 					updateDate, _ := time.Parse(layout, jpnicHandle.UpdateDate)
 					ins, err := db.Prepare("INSERT INTO result_jpnichandle (is_ipv6, get_date, jpnic_handle, name, name_en, email, org, org_en, division, division_en, tel, fax, update_date, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
 					if err != nil {
-						log.Println(err)
+						log.Println("Error", "prepare(INSERT) result_jpnichandle", err)
 						return
 					}
 					ins.QueryRow(
@@ -632,7 +632,7 @@ func GetJPNIC(cert JPNICCert) {
 			for _, listID := range listIDs {
 				upd, err := db.Prepare("UPDATE result_v4list SET get_date = ?, org = ?, org_en = ?, post_code = ?, address = ?, address_en = ?, name_server = ?, ds_record = ?, notify_address = ?, admin_jpnic_id = ?, asn_id = ? WHERE id = ?")
 				if err != nil {
-					log.Println(err)
+					log.Println("Error", "prepare(UPDATE) result_jpnichandle", err)
 					return
 				}
 				_, err = upd.Exec(
@@ -650,7 +650,7 @@ func GetJPNIC(cert JPNICCert) {
 					listID,
 				)
 				if err != nil {
-					log.Println(err)
+					log.Println("Error", "update result_jpnichandle", err)
 					return
 				}
 				upd.Close()
@@ -660,7 +660,7 @@ func GetJPNIC(cert JPNICCert) {
 
 				ins, err := db.Prepare("INSERT INTO result_v4list_tech_jpnic (v4list_id, jpnichandle_id) VALUES(?,?)")
 				if err != nil {
-					log.Println(err)
+					log.Println("Error", "prepare(INSERT) result_v4list_tech_jpnic", err)
 					return
 				}
 
