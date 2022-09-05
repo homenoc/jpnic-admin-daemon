@@ -21,7 +21,7 @@ func ParseDatabase() error {
 	case "mysql":
 		ConfDatabase.Driver = "mysql"
 		ConfDatabase.Option = Conf.Database.User + ":" + Conf.Database.Pass + "@(" +
-			Conf.Database.Name + ":" + strconv.Itoa(int(Conf.Database.Port)) + ")/" + Conf.Database.Name
+			Conf.Database.IP + ":" + strconv.Itoa(int(Conf.Database.Port)) + ")/" + Conf.Database.Name
 	default:
 		log.Println("Invalid database config.")
 		return fmt.Errorf("Invalid database config")
