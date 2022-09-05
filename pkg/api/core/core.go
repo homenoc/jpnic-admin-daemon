@@ -147,7 +147,10 @@ func Start() {
 }
 
 func GetJPNIC(cert JPNICCert) {
-	timeDate := etc.GetDate()
+	timeDate := etc.GetTodayStartDateTime()
+	if config.ConfDatabase.Driver == "mysql" {
+		timeDate = "'" + timeDate + "'"
+	}
 
 	var db *sql.DB
 	db, err := sql.Open(config.ConfDatabase.Driver, config.ConfDatabase.Option)
@@ -435,6 +438,7 @@ func GetJPNIC(cert JPNICCert) {
 				log.Println("Error", "scan result_v4_list", err)
 				return
 			}
+			log.Println(list)
 
 			if list.Address == "" && list.AddressEn == "" {
 				fmt.Printf("ID: %d, IPAddress: %s Address: %s(%s),受付番号: %s\n", list.ID, list.IPAddress, list.Address, list.AddressEn, list.RecepNumber)

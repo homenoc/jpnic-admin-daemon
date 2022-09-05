@@ -5,9 +5,11 @@ import (
 	"time"
 )
 
-func GetDate() string {
+func GetTodayStartDateTime() string {
 	now := time.Now().UTC()
-	timeDate := fmt.Sprintf("%04d-%02d-%02d 00:00:00", now.Year(), now.Month(), now.Day())
+	nowJst := now.Add(time.Hour * 9)
+	nowJst = nowJst.AddDate(0, 0, -1)
+	timeDate := fmt.Sprintf("%04d-%02d-%02d 15:00:00", nowJst.Year(), nowJst.Month(), nowJst.Day())
 
 	return timeDate
 }
