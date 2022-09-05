@@ -18,7 +18,7 @@ var dataCerts map[int]*JPNICCert
 
 func Start() {
 	dataCerts = map[int]*JPNICCert{}
-	var getConfTimer uint = 5
+	var getConfTimer uint = 30
 	getConfTick := time.NewTicker(time.Duration(getConfTimer) * time.Second)
 
 	go func() {
@@ -33,7 +33,7 @@ func Start() {
 				now := time.Now()
 				for id, dataValue := range dataCerts {
 					if dataValue.RenewDate.Unix() <= now.Unix() {
-						log.Println("", dataValue.RenewDate, "<", now)
+						log.Println("getInfo", dataValue.RenewDate, "<", now)
 						renewDate := now.Add(time.Minute * time.Duration(dataValue.CollectionInterval))
 						dataCerts[id].RenewDate = renewDate
 						if dataValue.IsADA {
@@ -49,7 +49,7 @@ func Start() {
 	for {
 		select {
 		case <-getConfTick.C:
-			config.GetCA()
+			go config.GetCA()
 			log.Println("get Info Tick")
 
 			var db *sql.DB
@@ -166,7 +166,7 @@ func GetJPNIC(cert JPNICCert) {
 	}
 
 	if cert.IsIPv6 {
-		rows, err := db.Query("SELECT id, ip_address, address, address_en, recep_number FROM result_v6list WHERE get_date >= $1 AND asn_id = $2", timeDate, cert.ASN)
+		rows, err := db.Query("SELECT id, ip_address, address, address_en, recep_number FROM result_v6list WHERE get_start_date >= $1 AND asn_id = $2", timeDate, cert.ASN)
 		if err != nil {
 			log.Println(err)
 			return
@@ -253,7 +253,7 @@ func GetJPNIC(cert JPNICCert) {
 				layout := "2006/01/02"
 				assignDate, _ := time.Parse(layout, tmp.AssignDate)
 
-				ins, err := db.Prepare("INSERT INTO result_v6list (get_date, ip_address, network_name, assign_date, return_date, org, org_en, resource_admin_short, recep_number, deli_number, division, post_code, address, address_en, name_server, ds_record, notify_address, admin_jpnic_id, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
+				ins, err := db.Prepare("INSERT INTO result_v6list (get_start_date, get_date, ip_address, network_name, assign_date, return_date, org, org_en, resource_admin_short, recep_number, deli_number, division, post_code, address, address_en, name_server, ds_record, notify_address, admin_jpnic_id, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
 				if err != nil {
 					log.Println(err)
 					return
@@ -261,6 +261,7 @@ func GetJPNIC(cert JPNICCert) {
 				defer ins.Close()
 
 				ins.QueryRow(
+					etc.GetTimeDate(),
 					etc.GetTimeDate(),
 					tmp.IPAddress,
 					tmp.NetworkName,
@@ -310,7 +311,7 @@ func GetJPNIC(cert JPNICCert) {
 			rows.Close()
 
 			// JPNIC Handle探索
-			rows, err = db.Query("SELECT id,jpnic_handle,get_date FROM result_jpnichandle WHERE get_date >= $1 AND asn_id = $2 AND is_ipv6 = $3", timeDate, cert.ASN, true)
+			rows, err = db.Query("SELECT id,jpnic_handle,get_date FROM result_jpnichandle WHERE get_start_date >= $1 AND asn_id = $2 AND is_ipv6 = $3", timeDate, cert.ASN, true)
 			if err != nil {
 				log.Println(err)
 				return
@@ -351,13 +352,14 @@ func GetJPNIC(cert JPNICCert) {
 
 					layout := "2006/01/02 15:04"
 					updateDate, _ := time.Parse(layout, jpnicHandle.UpdateDate)
-					ins, err := db.Prepare("INSERT INTO result_jpnichandle (is_ipv6, get_date, jpnic_handle, name, name_en, email, org, org_en, division, division_en, tel, fax, update_date, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
+					ins, err := db.Prepare("INSERT INTO result_jpnichandle (is_ipv6, get_start_date, get_date, jpnic_handle, name, name_en, email, org, org_en, division, division_en, tel, fax, update_date, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
 					if err != nil {
 						log.Println(err)
 						return
 					}
 					ins.QueryRow(
 						true,
+						etc.GetTimeDate(),
 						etc.GetTimeDate(),
 						jpnicHandle.JPNICHandle,
 						jpnicHandle.Name,
@@ -420,7 +422,7 @@ func GetJPNIC(cert JPNICCert) {
 		}
 	} else {
 		// IPv4
-		rows, err := db.Query("SELECT id, ip_address, address, address_en, recep_number FROM result_v4list WHERE get_date >= $1 AND asn_id = $2", timeDate, cert.ASN)
+		rows, err := db.Query("SELECT id, ip_address, address, address_en, recep_number FROM result_v4list WHERE get_start_date >= $1 AND asn_id = $2", timeDate, cert.ASN)
 		if err != nil {
 			log.Println("Error", "query result_v4_list", err)
 			return
@@ -502,7 +504,7 @@ func GetJPNIC(cert JPNICCert) {
 				layout := "2006/01/02"
 				assignDate, _ := time.Parse(layout, tmp.AssignDate)
 
-				ins, err := db.Prepare("INSERT INTO result_v4list (get_date, ip_address, size, network_name, assign_date, return_date, org, org_en, resource_admin_short, recep_number, deli_number, type, division, post_code, address, address_en, name_server, ds_record, notify_address, admin_jpnic_id, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
+				ins, err := db.Prepare("INSERT INTO result_v4list (get_start_date, get_date, ip_address, size, network_name, assign_date, return_date, org, org_en, resource_admin_short, recep_number, deli_number, type, division, post_code, address, address_en, name_server, ds_record, notify_address, admin_jpnic_id, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
 				if err != nil {
 					log.Println("Error", "prepare result_v4list", err)
 					return
@@ -510,6 +512,7 @@ func GetJPNIC(cert JPNICCert) {
 				defer ins.Close()
 
 				ins.QueryRow(
+					etc.GetTimeDate(),
 					etc.GetTimeDate(),
 					tmp.IPAddress,
 					tmp.Size,
@@ -561,7 +564,7 @@ func GetJPNIC(cert JPNICCert) {
 			rows.Close()
 
 			// JPNIC Handle探索
-			rows, err = db.Query("SELECT id,jpnic_handle,get_date FROM result_jpnichandle WHERE get_date >= $1 AND asn_id = $2 AND is_ipv6 = $3", timeDate, cert.ASN, false)
+			rows, err = db.Query("SELECT id,jpnic_handle,get_date FROM result_jpnichandle WHERE get_start_date >= $1 AND asn_id = $2 AND is_ipv6 = $3", timeDate, cert.ASN, false)
 			if err != nil {
 				log.Println("Error", "query result_jpnichandle", err)
 				return
@@ -592,6 +595,7 @@ func GetJPNIC(cert JPNICCert) {
 			})
 			if err != nil {
 				log.Println("Error", "searchIPv4(detail)", err)
+				return
 			}
 
 			// jpnic_handle DBに追加処理
@@ -601,13 +605,14 @@ func GetJPNIC(cert JPNICCert) {
 
 					layout := "2006/01/02 15:04"
 					updateDate, _ := time.Parse(layout, jpnicHandle.UpdateDate)
-					ins, err := db.Prepare("INSERT INTO result_jpnichandle (is_ipv6, get_date, jpnic_handle, name, name_en, email, org, org_en, division, division_en, tel, fax, update_date, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
+					ins, err := db.Prepare("INSERT INTO result_jpnichandle (is_ipv6, get_start_date, get_date, jpnic_handle, name, name_en, email, org, org_en, division, division_en, tel, fax, update_date, asn_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id;")
 					if err != nil {
 						log.Println("Error", "prepare(INSERT) result_jpnichandle", err)
 						return
 					}
 					ins.QueryRow(
 						false,
+						etc.GetTimeDate(),
 						etc.GetTimeDate(),
 						jpnicHandle.JPNICHandle,
 						jpnicHandle.Name,
@@ -628,6 +633,7 @@ func GetJPNIC(cert JPNICCert) {
 					handles[jpnicHandle.JPNICHandle], _ = strconv.Atoi(jpnicHandleID)
 				}
 			}
+
 			// result_v4list DBにUpdate処理
 			for _, listID := range listIDs {
 				upd, err := db.Prepare("UPDATE result_v4list SET get_date = ?, org = ?, org_en = ?, post_code = ?, address = ?, address_en = ?, name_server = ?, ds_record = ?, notify_address = ?, admin_jpnic_id = ?, asn_id = ? WHERE id = ?")

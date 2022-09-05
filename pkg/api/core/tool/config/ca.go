@@ -7,12 +7,21 @@ import (
 
 var CA []byte
 
-func GetCA() {
-	req, _ := http.NewRequest("GET", Conf.CaURL, nil)
-
+func GetCA() error {
+	req, err := http.NewRequest("GET", Conf.CaURL, nil)
+	if err != nil {
+		return err
+	}
 	client := new(http.Client)
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
-	CA, _ = ioutil.ReadAll(resp.Body)
+	CA, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	return nil
 }
