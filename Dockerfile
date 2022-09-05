@@ -15,4 +15,4 @@ FROM alpine:3
 WORKDIR /
 COPY --from=build /daemon /daemon
 RUN ls
-CMD ["/daemon"]
+CMD ["/daemon","start"]

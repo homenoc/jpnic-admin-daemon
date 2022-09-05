@@ -14,12 +14,21 @@ var startCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		confPath, err := cmd.Flags().GetString("config")
-		if err != nil {
-			log.Fatalf("could not greet: %v", err)
+		if err != nil || confPath == "" {
+			log.Printf("getting environment")
+			err = config.GetEnvConfig()
+			if err != nil {
+				log.Fatal("getting os.env config", err)
+			}
+		} else {
+			if config.GetConfig(confPath) != nil {
+				log.Fatal("getting config", err)
+			}
 		}
 
-		if config.GetConfig(confPath) != nil {
-			log.Fatal("getting config", err)
+		err = config.ParseDatabase()
+		if err != nil {
+			log.Fatalf("getting database error: %v", err)
 		}
 
 		core.Start()

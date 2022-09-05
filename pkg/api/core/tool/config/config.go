@@ -3,6 +3,8 @@ package config
 import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -41,5 +43,30 @@ func GetConfig(inputConfPath string) error {
 	Conf = data
 	ParseDatabase()
 
+	return nil
+}
+
+func GetEnvConfig() error {
+	var data Config
+	var databasePort uint = 3306
+
+	data.CaURL = os.Getenv("CA_URL")
+	data.Database.Type = os.Getenv("DATABASE_TYPE")
+	data.Database.Path = os.Getenv("DATABASE_PATH")
+	data.Database.IP = os.Getenv("DATABASE_IP")
+	portStr := os.Getenv("DATABASE_PORT")
+	if portStr != "" {
+		tmpPort, err := strconv.Atoi(portStr)
+		if err != nil {
+			return err
+		}
+		databasePort = uint(tmpPort)
+	}
+	data.Database.Port = databasePort
+	data.Database.Name = os.Getenv("DATABASE_NAME")
+	data.Database.User = os.Getenv("DATABASE_USER")
+	data.Database.Pass = os.Getenv("DATABASE_PASS")
+
+	Conf = data
 	return nil
 }
