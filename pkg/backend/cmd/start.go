@@ -30,6 +30,7 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("getting database error: %v", err)
 		}
+		log.Println("Database:", config.ConfDatabase.Driver, config.ConfDatabase.Option)
 
 		core.Start()
 
