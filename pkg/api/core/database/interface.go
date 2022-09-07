@@ -53,7 +53,7 @@ type V4List struct {
 	NameServer         string
 	DsRecord           string
 	NotifyAddress      string
-	AdminJpnicId       uint
+	AdminJpnicId       *uint
 	AsnId              uint
 }
 
@@ -77,7 +77,7 @@ type V6List struct {
 	NameServer         string
 	DsRecord           string
 	NotifyAddress      string
-	AdminJpnicId       uint
+	AdminJpnicId       *uint
 	AsnId              uint
 }
 

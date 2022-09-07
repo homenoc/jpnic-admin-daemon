@@ -161,11 +161,12 @@ func (b *base) GetJPNICProcess(p Process) error {
 	log.Println("GetJPNICProcess")
 	err := p.getBaseIPList()
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	// イレギュラー処理
 	// この場合は、住所/住所(English)情報,受付番号に空白文字を突っ込む
-	result, err := p.irregularProcess(b.cert.Base.ASN)
+	result, err := p.irregularProcess(b.cert.Base.ID)
 	if result {
 		return nil
 	}
@@ -202,12 +203,11 @@ func (b *base) GetJPNICProcess(p Process) error {
 		}
 
 		// JPNIC Handle探索
-		jpnicHandles, err := b.db.GetRangeJPNICHandle(b.todayStartTime, b.cert.Base.ASN, p.getIPv6())
+		jpnicHandles, err := b.db.GetRangeJPNICHandle(b.todayStartTime, b.cert.Base.ID, p.getIPv6())
 		if err != nil {
 			log.Println(err)
 			return err
 		}
-		log.Println(jpnicHandles)
 
 		handles := make(map[string]uint)
 		var strHandles []string

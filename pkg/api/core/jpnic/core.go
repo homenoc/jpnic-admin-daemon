@@ -187,7 +187,7 @@ func (c *Config) GetResourceAll() (ResourceAllInfo, string, error) {
 		return info, html, err
 	}
 
-	log.Println(infos)
+	//log.Println(infos)
 	file, _ := json.MarshalIndent(infos, "", " ")
 	_ = ioutil.WriteFile("./test1.json", file, 0644)
 
@@ -231,7 +231,6 @@ func Loop(r *request, addressList []ResourceAddressList, infos *[]InfoDetail) (*
 				return nil, err
 			}
 
-			log.Println(addressInfo)
 			*infos = append(*infos, addressInfo)
 			Loop(r, addressList, infos)
 		}

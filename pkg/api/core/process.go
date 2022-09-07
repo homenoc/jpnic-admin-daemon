@@ -33,7 +33,7 @@ type ipv6 struct {
 }
 
 func (v4 *ipv4) getBaseIPList() error {
-	list, err := v4.base.db.GetRangeV4List(v4.base.todayStartTime, v4.base.cert.Base.ASN)
+	list, err := v4.base.db.GetRangeV4List(v4.base.todayStartTime, v4.base.cert.Base.ID)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (v4 *ipv4) getBaseIPList() error {
 }
 
 func (v6 *ipv6) getBaseIPList() error {
-	list, err := v6.base.db.GetRangeV6List(v6.base.todayStartTime, v6.base.cert.Base.ASN)
+	list, err := v6.base.db.GetRangeV6List(v6.base.todayStartTime, v6.base.cert.Base.ID)
 	if err != nil {
 		return err
 	}
@@ -52,12 +52,12 @@ func (v6 *ipv6) getBaseIPList() error {
 
 func (v4 *ipv4) checkJPNICDataExistsCounter() (int64, int64, error) {
 	var noGet, got int64
-	noGet, err := v4.base.db.GetV4JPNICDataNotReceivedCount(v4.base.todayStartTime, v4.base.todayEndTime, v4.base.cert.Base.ASN)
+	noGet, err := v4.base.db.GetV4JPNICDataNotReceivedCount(v4.base.todayStartTime, v4.base.todayEndTime, v4.base.cert.Base.ID)
 	if err != nil {
 		return noGet, got, err
 	}
 
-	got, err = v4.base.db.GetV4JPNICDataReceivedCount(v4.base.todayStartTime, v4.base.todayEndTime, v4.base.cert.Base.ASN)
+	got, err = v4.base.db.GetV4JPNICDataReceivedCount(v4.base.todayStartTime, v4.base.todayEndTime, v4.base.cert.Base.ID)
 	if err != nil {
 		return noGet, got, err
 	}
@@ -67,12 +67,12 @@ func (v4 *ipv4) checkJPNICDataExistsCounter() (int64, int64, error) {
 
 func (v6 *ipv6) checkJPNICDataExistsCounter() (int64, int64, error) {
 	var noGet, got int64
-	noGet, err := v6.base.db.GetV6JPNICDataNotReceivedCount(v6.base.todayStartTime, v6.base.todayEndTime, v6.base.cert.Base.ASN)
+	noGet, err := v6.base.db.GetV6JPNICDataNotReceivedCount(v6.base.todayStartTime, v6.base.todayEndTime, v6.base.cert.Base.ID)
 	if err != nil {
 		return noGet, got, err
 	}
 
-	got, err = v6.base.db.GetV6JPNICDataReceivedCount(v6.base.todayStartTime, v6.base.todayEndTime, v6.base.cert.Base.ASN)
+	got, err = v6.base.db.GetV6JPNICDataReceivedCount(v6.base.todayStartTime, v6.base.todayEndTime, v6.base.cert.Base.ID)
 	if err != nil {
 		return noGet, got, err
 	}
@@ -170,10 +170,14 @@ func (v4 ipv4) getBaseData() error {
 
 	for _, tmp := range infos {
 		sizeNum, _ := strconv.Atoi(tmp.Size)
-		adminJPNICHandleNum, _ := strconv.Atoi(tmp.InfoDetail.AdminJPNICHandle)
 		var returnDate *string = nil
 		if tmp.ReturnDate != "" {
 			returnDate = &tmp.ReturnDate
+		}
+		adminJPNICHandleNum, _ := strconv.Atoi(tmp.InfoDetail.AdminJPNICHandle)
+		var adminJpnicId *uint = nil
+		if adminJPNICHandleNum != 0 {
+			adminJpnicId = &[]uint{uint(adminJPNICHandleNum)}[0]
 		}
 		_, err := v4.base.db.CreateResultV4List(database.V4List{
 			GetStartDate:       etc.GetTimeDate(),
@@ -196,8 +200,8 @@ func (v4 ipv4) getBaseData() error {
 			NameServer:         tmp.InfoDetail.NameServer,
 			DsRecord:           tmp.InfoDetail.DSRecord,
 			NotifyAddress:      tmp.InfoDetail.NotifyAddress,
-			AdminJpnicId:       uint(adminJPNICHandleNum),
-			AsnId:              v4.base.cert.Base.ASN,
+			AdminJpnicId:       adminJpnicId,
+			AsnId:              v4.base.cert.Base.ID,
 		})
 		if err != nil {
 			return err
@@ -242,10 +246,14 @@ func (v6 ipv6) getBaseData() error {
 	}
 
 	for _, tmp := range infos {
-		adminJPNICHandleNum, _ := strconv.Atoi(tmp.InfoDetail.AdminJPNICHandle)
 		var returnDate *string = nil
 		if tmp.ReturnDate != "" {
 			returnDate = &tmp.ReturnDate
+		}
+		adminJPNICHandleNum, _ := strconv.Atoi(tmp.InfoDetail.AdminJPNICHandle)
+		var adminJpnicId *uint = nil
+		if adminJPNICHandleNum != 0 {
+			adminJpnicId = &[]uint{uint(adminJPNICHandleNum)}[0]
 		}
 		_, err := v6.base.db.CreateResultV6List(database.V6List{
 			GetStartDate:       etc.GetTimeDate(),
@@ -265,8 +273,8 @@ func (v6 ipv6) getBaseData() error {
 			NameServer:         tmp.InfoDetail.NameServer,
 			DsRecord:           tmp.InfoDetail.DSRecord,
 			NotifyAddress:      tmp.InfoDetail.NotifyAddress,
-			AdminJpnicId:       uint(adminJPNICHandleNum),
-			AsnId:              v6.base.cert.Base.ASN,
+			AdminJpnicId:       adminJpnicId,
+			AsnId:              v6.base.cert.Base.ID,
 		})
 		if err != nil {
 			return err
@@ -292,7 +300,7 @@ func (v6 ipv6) irregularCheck() error {
 func (v4 ipv4) getSameRecepNumID() ([]uint, error) {
 	// 同じ受付番号がないか確認
 	var idList []uint
-	listsByRecpNum, err := v4.base.db.GetRangeV4ListByRecepNumber(v4.base.todayStartTime, v4.baseV4List.RecepNumber, v4.base.cert.Base.ASN)
+	listsByRecpNum, err := v4.base.db.GetRangeV4ListByRecepNumber(v4.base.todayStartTime, v4.baseV4List.RecepNumber, v4.base.cert.Base.ID)
 	if err != nil {
 		return idList, err
 	}
@@ -305,7 +313,7 @@ func (v4 ipv4) getSameRecepNumID() ([]uint, error) {
 func (v6 ipv6) getSameRecepNumID() ([]uint, error) {
 	// 同じ受付番号がないか確認
 	var idList []uint
-	listsByRecpNum, err := v6.base.db.GetRangeV6ListByRecepNumber(v6.base.todayStartTime, v6.baseV6List.RecepNumber, v6.base.cert.Base.ASN)
+	listsByRecpNum, err := v6.base.db.GetRangeV6ListByRecepNumber(v6.base.todayStartTime, v6.baseV6List.RecepNumber, v6.base.cert.Base.ID)
 	if err != nil {
 		return idList, err
 	}
@@ -345,7 +353,7 @@ func (v4 ipv4) getDetail(strHandles []string, handles map[string]uint, ids []uin
 				Tel:          jpnicHandle.Tel,
 				Fax:          jpnicHandle.Fax,
 				UpdateDate:   jpnicHandle.UpdateDate,
-				ASN:          v4.base.cert.Base.ASN,
+				ASN:          v4.base.cert.Base.ID,
 			})
 			if err != nil {
 				log.Println("jpnic handle data create:", err)
@@ -368,8 +376,8 @@ func (v4 ipv4) getDetail(strHandles []string, handles map[string]uint, ids []uin
 			NameServer:    data.InfoIPv4[0].InfoDetail.NameServer,
 			DsRecord:      data.InfoIPv4[0].InfoDetail.DSRecord,
 			NotifyAddress: data.InfoIPv4[0].InfoDetail.NotifyAddress,
-			AdminJpnicId:  handles[data.InfoIPv4[0].InfoDetail.AdminJPNICHandle],
-			AsnId:         v4.base.cert.Base.ASN,
+			AdminJpnicId:  &[]uint{handles[data.InfoIPv4[0].InfoDetail.AdminJPNICHandle]}[0],
+			AsnId:         v4.base.cert.Base.ID,
 		})
 		if err != nil {
 			log.Println("Error", "update result_jpnichandle", err)
@@ -421,7 +429,7 @@ func (v6 ipv6) getDetail(strHandles []string, handles map[string]uint, ids []uin
 				Tel:          jpnicHandle.Tel,
 				Fax:          jpnicHandle.Fax,
 				UpdateDate:   jpnicHandle.UpdateDate,
-				ASN:          v6.base.cert.Base.ASN,
+				ASN:          v6.base.cert.Base.ID,
 			})
 			if err != nil {
 				log.Println("jpnic handle data create:", err)
@@ -443,8 +451,8 @@ func (v6 ipv6) getDetail(strHandles []string, handles map[string]uint, ids []uin
 			NameServer:    data.InfoIPv6[0].InfoDetail.NameServer,
 			DsRecord:      data.InfoIPv6[0].InfoDetail.DSRecord,
 			NotifyAddress: data.InfoIPv6[0].InfoDetail.NotifyAddress,
-			AdminJpnicId:  handles[data.InfoIPv6[0].InfoDetail.AdminJPNICHandle],
-			AsnId:         v6.base.cert.Base.ASN,
+			AdminJpnicId:  &[]uint{handles[data.InfoIPv6[0].InfoDetail.AdminJPNICHandle]}[0],
+			AsnId:         v6.base.cert.Base.ID,
 		})
 		if err != nil {
 			log.Println("Error", "update result_jpnichandle", err)
