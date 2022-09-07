@@ -171,6 +171,10 @@ func (v4 ipv4) getBaseData() error {
 	for _, tmp := range infos {
 		sizeNum, _ := strconv.Atoi(tmp.Size)
 		adminJPNICHandleNum, _ := strconv.Atoi(tmp.InfoDetail.AdminJPNICHandle)
+		var returnDate *string = nil
+		if tmp.ReturnDate != "" {
+			returnDate = &tmp.ReturnDate
+		}
 		_, err := v4.base.db.CreateResultV4List(database.V4List{
 			GetStartDate:       etc.GetTimeDate(),
 			GetDate:            etc.GetTimeDate(),
@@ -178,7 +182,7 @@ func (v4 ipv4) getBaseData() error {
 			Size:               uint(sizeNum),
 			NetworkName:        tmp.NetworkName,
 			AssignDate:         tmp.AssignDate,
-			ReturnDate:         tmp.ReturnDate,
+			ReturnDate:         returnDate,
 			Org:                tmp.InfoDetail.Org,
 			OrgEn:              tmp.InfoDetail.OrgEn,
 			ResourceAdminShort: tmp.InfoDetail.Ryakusho,
@@ -239,13 +243,17 @@ func (v6 ipv6) getBaseData() error {
 
 	for _, tmp := range infos {
 		adminJPNICHandleNum, _ := strconv.Atoi(tmp.InfoDetail.AdminJPNICHandle)
+		var returnDate *string = nil
+		if tmp.ReturnDate != "" {
+			returnDate = &tmp.ReturnDate
+		}
 		_, err := v6.base.db.CreateResultV6List(database.V6List{
 			GetStartDate:       etc.GetTimeDate(),
 			GetDate:            etc.GetTimeDate(),
 			IpAddress:          tmp.IPAddress,
 			NetworkName:        tmp.NetworkName,
 			AssignDate:         tmp.AssignDate,
-			ReturnDate:         tmp.ReturnDate,
+			ReturnDate:         returnDate,
 			Org:                tmp.InfoDetail.Org,
 			OrgEn:              tmp.InfoDetail.OrgEn,
 			ResourceAdminShort: tmp.InfoDetail.Ryakusho,

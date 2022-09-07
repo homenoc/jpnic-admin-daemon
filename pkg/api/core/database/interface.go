@@ -39,7 +39,7 @@ type V4List struct {
 	Size               uint
 	NetworkName        string
 	AssignDate         string
-	ReturnDate         string
+	ReturnDate         *string
 	Org                string
 	OrgEn              string
 	ResourceAdminShort string
@@ -64,7 +64,7 @@ type V6List struct {
 	IpAddress          string
 	NetworkName        string
 	AssignDate         string
-	ReturnDate         string
+	ReturnDate         *string
 	Org                string
 	OrgEn              string
 	ResourceAdminShort string
