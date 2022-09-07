@@ -14,6 +14,19 @@ func GetTodayStartDateTime() string {
 	return timeDate
 }
 
+func GetTodayEndDateTime(option bool) string {
+	now := time.Now().UTC()
+	nowJst := now.Add(time.Hour * 9)
+	nowJst = nowJst.AddDate(0, 0, 0)
+	t := "14:59:59"
+	if option {
+		t = "15:00:00"
+	}
+	timeDate := fmt.Sprintf("%04d-%02d-%02d %s", nowJst.Year(), nowJst.Month(), nowJst.Day(), t)
+
+	return timeDate
+}
+
 func GetDatePlusDay() string {
 	now := time.Now().UTC().AddDate(0, 0, 1)
 	timeDate := fmt.Sprintf("%04d-%02d-%02d 00:00:00", now.Year(), now.Month(), now.Day())
