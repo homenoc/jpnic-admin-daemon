@@ -1,7 +1,6 @@
 package jpnic
 
 import (
-	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
 	"net/http"
@@ -100,8 +99,7 @@ func getInfoDetail(client *http.Client, userURL string) (InfoDetail, error) {
 
 		isTitle = !isTitle
 	})
-
-	fmt.Printf("(%%#v) %#v\n", info)
+	//fmt.Printf("(%%#v) %#v\n", info)
 
 	return info, nil
 }

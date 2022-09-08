@@ -54,6 +54,11 @@ func Start() {
 					return
 				}
 
+				dbSql, err := db.DB.DB()
+				if err != nil {
+					return
+				}
+				defer dbSql.Close()
 				jpnicLists, err := db.GetAllJPNIC()
 				if err != nil {
 					log.Println(err)
@@ -127,6 +132,7 @@ func GetInitProcess(cert JPNICCert) {
 	if err != nil {
 		log.Println("get config", "Database connection error", err)
 	}
+	dbSql, _ := db.DB.DB()
 
 	b := base{
 		todayStartTime: startTime,
@@ -141,22 +147,20 @@ func GetInitProcess(cert JPNICCert) {
 		err = b.GetJPNICProcess(&ipv4{
 			base: b,
 		})
-		if err != nil {
-			log.Println(err)
-		}
 	} else {
 		//IPv6
 		err = b.GetJPNICProcess(&ipv6{
 			base: b,
 		})
-		if err != nil {
-			log.Println(err)
-		}
+	}
+	dbSql.Close()
+	if err != nil {
+		log.Println(err)
 	}
 }
 
 func (b *base) GetJPNICProcess(p Process) error {
-	log.Println("GetJPNICProcess")
+	//log.Println("GetJPNICProcess")
 	err := p.getBaseIPList()
 	if err != nil {
 		log.Println(err)

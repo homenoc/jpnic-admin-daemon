@@ -30,9 +30,9 @@ func Connect() (*Base, error) {
 		log.Println("Invalid database config.")
 		return nil, fmt.Errorf("Invalid database config")
 	}
-
 	if err != nil {
 		return nil, err
 	}
+
 	return &Base{DB: db}, err
 }
