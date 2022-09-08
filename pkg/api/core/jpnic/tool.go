@@ -120,3 +120,17 @@ func getSearchBoolean(isFilter bool) string {
 		return "off"
 	}
 }
+
+func splitSpaceString(value string) (string, []string) {
+	split := strings.Fields(value)
+	str := ""
+	for _, tel := range split {
+		str += ","
+		str += tel
+	}
+	if len(split) != 0 {
+		str = str[1:]
+	}
+
+	return str, split
+}

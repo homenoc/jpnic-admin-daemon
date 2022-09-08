@@ -161,11 +161,11 @@ func getJPNICHandle(client *http.Client, handleURL string) (JPNICHandleDetail, e
 		case "Title":
 			info.TitleEn = dataStr
 		case "電話番号":
-			info.Tel = dataStr
+			info.Tel, _ = splitSpaceString(dataStr)
 		case "Fax番号":
-			info.Fax = dataStr
+			info.Fax, _ = splitSpaceString(dataStr)
 		case "FAX番号": // JPNIC側の表記ゆれのため
-			info.Fax = dataStr
+			info.Fax, _ = splitSpaceString(dataStr)
 		case "通知アドレス":
 			info.NotifyAddress = dataStr
 		case "最終更新":
