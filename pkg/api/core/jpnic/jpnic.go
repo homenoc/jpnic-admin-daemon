@@ -176,13 +176,13 @@ func (c *Config) SearchIPv4(search SearchIPv4) (*ResultSearchIPv4, error) {
 				//log.Println("==========")
 				time.Sleep(1 * time.Second)
 				//log.Println("req1")
+				// アドレスの詳細情報を取得
 				info.InfoDetail, err = getInfoDetail(client, info.DetailLink)
 				if err != nil {
-
 					return
 				}
 				// Admin JPNIC Handle
-				if _, ok := isJPNICHandleExist[info.InfoDetail.TechJPNICHandle]; !ok {
+				if _, isExist := isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle]; !isExist {
 					// 一定時間停止
 					time.Sleep(1 * time.Second)
 					//log.Println("req2")
@@ -192,20 +192,21 @@ func (c *Config) SearchIPv4(search SearchIPv4) (*ResultSearchIPv4, error) {
 						return
 					}
 					jpnicHandles = append(jpnicHandles, jpnic)
-					isJPNICHandleExist[info.InfoDetail.TechJPNICHandle] = 0
+					isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle] = 0
 				}
 				// Tech JPNIC Handle
-				if _, ok := isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle]; !ok {
-					//log.Println("req3")
-					// 一定時間停止
-					time.Sleep(1 * time.Second)
+				for _, techJPNICHandle := range info.InfoDetail.TechJPNICHandles {
+					if _, isExist := isJPNICHandleExist[techJPNICHandle.TechJPNICHandle]; !isExist {
+						// 一定時間停止
+						time.Sleep(1 * time.Second)
 
-					jpnic, err := getJPNICHandle(client, info.InfoDetail.TechJPNICHandleLink)
-					if err != nil {
-						return
+						jpnic, err := getJPNICHandle(client, techJPNICHandle.TechJPNICHandleLink)
+						if err != nil {
+							return
+						}
+						jpnicHandles = append(jpnicHandles, jpnic)
+						isJPNICHandleExist[techJPNICHandle.TechJPNICHandle] = 0
 					}
-					jpnicHandles = append(jpnicHandles, jpnic)
-					isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle] = 0
 				}
 				//log.Printf("count: %d\n", allCounter)
 				//log.Println("==========")
@@ -382,7 +383,7 @@ func (c *Config) SearchIPv6(search SearchIPv6) (*ResultSearchIPv6, error) {
 					return
 				}
 				// Admin JPNIC Handle
-				if _, ok := isJPNICHandleExist[info.InfoDetail.TechJPNICHandle]; !ok {
+				if _, isExist := isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle]; !isExist {
 					// 一定時間停止
 					time.Sleep(1 * time.Second)
 					//log.Println("req2")
@@ -392,20 +393,21 @@ func (c *Config) SearchIPv6(search SearchIPv6) (*ResultSearchIPv6, error) {
 						return
 					}
 					jpnicHandles = append(jpnicHandles, jpnic)
-					isJPNICHandleExist[info.InfoDetail.TechJPNICHandle] = 0
+					isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle] = 0
 				}
 				// Tech JPNIC Handle
-				if _, ok := isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle]; !ok {
-					//log.Println("req3")
-					// 一定時間停止
-					time.Sleep(1 * time.Second)
+				for _, techJPNICHandle := range info.InfoDetail.TechJPNICHandles {
+					if _, isExist := isJPNICHandleExist[techJPNICHandle.TechJPNICHandle]; !isExist {
+						// 一定時間停止
+						time.Sleep(1 * time.Second)
 
-					jpnic, err := getJPNICHandle(client, info.InfoDetail.TechJPNICHandleLink)
-					if err != nil {
-						return
+						jpnic, err := getJPNICHandle(client, techJPNICHandle.TechJPNICHandleLink)
+						if err != nil {
+							return
+						}
+						jpnicHandles = append(jpnicHandles, jpnic)
+						isJPNICHandleExist[techJPNICHandle.TechJPNICHandle] = 0
 					}
-					jpnicHandles = append(jpnicHandles, jpnic)
-					isJPNICHandleExist[info.InfoDetail.AdminJPNICHandle] = 0
 				}
 				//log.Printf("count: %d\n", allCounter)
 				//log.Println("==========")

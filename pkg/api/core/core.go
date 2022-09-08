@@ -25,14 +25,14 @@ func Start() {
 		for {
 			select {
 			case <-getInfoTick.C:
-				log.Printf("start(getInfoTick) \n")
 				now := time.Now()
 				for id, dataValue := range dataCerts {
 					if dataValue.RenewDate.Unix() <= now.Unix() {
-						log.Println("getInfo", dataValue.RenewDate, "<", now)
+						//log.Println("getInfo", dataValue.RenewDate, "<", now)
 						renewDate := now.Add(time.Minute * time.Duration(dataValue.Base.CollectionInterval))
 						dataCerts[id].RenewDate = renewDate
 						if dataValue.Base.Ada {
+							log.Println("getting data", dataValue.Base.Name)
 							go GetInitProcess(*dataValue)
 						}
 					}
@@ -46,7 +46,6 @@ func Start() {
 		select {
 		case <-getConfTick.C:
 			go config.GetCA()
-			log.Println("get Info Tick")
 
 			go func() {
 				db, err := database.Connect()
@@ -217,6 +216,7 @@ func (b *base) GetJPNICProcess(p Process) error {
 			//fmt.Printf("ID: %d(%s),Handle: %s\n", jpnicHandle.ID, jpnicHandle.GetStartDate, jpnicHandle.JPNICHandle)
 		}
 
+		// JPNIC Handleの登録と紐付け作業
 		err = p.getDetail(strHandles, handles, ids)
 		if err != nil {
 			return err

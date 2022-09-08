@@ -102,33 +102,37 @@ type Etc struct {
 }
 
 type InfoDetail struct {
-	URL                  string  `json:"url"`
-	IPAddress            string  `json:"ip_address"`
-	Ryakusho             string  `json:"ryakusho"`
-	Type                 string  `json:"type"`
-	InfraUserKind        string  `json:"infra_user_kind"`
-	NetworkName          string  `json:"network_name"`
-	Org                  string  `json:"org"`
-	OrgEn                string  `json:"org_en"`
-	PostCode             string  `json:"post_code"`
-	Address              string  `json:"address"`
-	AddressEn            string  `json:"address_en"`
-	AdminJPNICHandle     string  `json:"admin_jpnic_handle"`
-	AdminJPNICHandleLink string  `json:"admin_jpnic_handle_link"`
-	TechJPNICHandle      string  `json:"tech_jpnic_handle"`
-	TechJPNICHandleLink  string  `json:"tech_jpnic_handle_link"`
-	Abuse                string  `json:"abuse"`       // allocation only
-	NameServer           string  `json:"name_server"` // assignment and SUBA only
-	DSRecord             string  `json:"ds_record"`   // assignment only
-	NotifyAddress        string  `json:"notify_address"`
-	DeliNo               string  `json:"deli_no"`
-	RecepNo              string  `json:"recep_no"`
-	AssignDate           string  `json:"assign_date"`
-	ReturnDate           string  `json:"return_date"` //assignment and SUBA only
-	UpdateDate           string  `json:"update_date"`
-	UtilizationRatio     float64 `json:"utilization_ratio"` // allocation only
-	UsedAddress          uint64  `json:"used_address"`      // allocation only
-	AllAddress           uint64  `json:"all_address"`       // allocation only
+	URL                  string            `json:"url"`
+	IPAddress            string            `json:"ip_address"`
+	Ryakusho             string            `json:"ryakusho"`
+	Type                 string            `json:"type"`
+	InfraUserKind        string            `json:"infra_user_kind"`
+	NetworkName          string            `json:"network_name"`
+	Org                  string            `json:"org"`
+	OrgEn                string            `json:"org_en"`
+	PostCode             string            `json:"post_code"`
+	Address              string            `json:"address"`
+	AddressEn            string            `json:"address_en"`
+	AdminJPNICHandle     string            `json:"admin_jpnic_handle"`
+	AdminJPNICHandleLink string            `json:"admin_jpnic_handle_link"`
+	TechJPNICHandles     []TechJPNICHandle `json:"tech_jpnic_handles"`
+	Abuse                string            `json:"abuse"`       // allocation only
+	NameServer           []string          `json:"name_server"` // assignment and SUBA only
+	DSRecord             string            `json:"ds_record"`   // assignment only
+	NotifyAddress        string            `json:"notify_address"`
+	DeliNo               string            `json:"deli_no"`
+	RecepNo              string            `json:"recep_no"`
+	AssignDate           string            `json:"assign_date"`
+	ReturnDate           string            `json:"return_date"` //assignment and SUBA only
+	UpdateDate           string            `json:"update_date"`
+	UtilizationRatio     float64           `json:"utilization_ratio"` // allocation only
+	UsedAddress          uint64            `json:"used_address"`      // allocation only
+	AllAddress           uint64            `json:"all_address"`       // allocation only
+}
+
+type TechJPNICHandle struct {
+	TechJPNICHandle     string `json:"tech_jpnic_handle"`
+	TechJPNICHandleLink string `json:"tech_jpnic_handle_link"`
 }
 
 type JPNICHandleDetail struct {

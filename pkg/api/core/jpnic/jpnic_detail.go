@@ -1,6 +1,7 @@
 package jpnic
 
 import (
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
 	"net/http"
@@ -37,61 +38,72 @@ func getInfoDetail(client *http.Client, userURL string) (InfoDetail, error) {
 	var title string
 	isTitle := true
 
-	doc.Find("table").Children().Find("table").Children().Find("table").Children().Find("table").Children().Find("td").Each(func(_ int, tableHtml1 *goquery.Selection) {
+	doc.Find("table").Children().Find("table").Children().Find("table").Children().Find("table").Children().Find("td").Each(func(i int, tableHtml1 *goquery.Selection) {
 		dataStr := strings.TrimSpace(tableHtml1.Text())
 		if isTitle {
-			title = dataStr
-		}
+			if (dataStr == "" && "技術連絡担当者" == title) ||
+				(dataStr == "" && "ネームサーバ" == title) {
+				_ = dataStr
+			} else {
+				title = dataStr
+			}
+		} else {
 
-		switch title {
-		case "IPネットワークアドレス":
-			info.IPAddress = dataStr
-		case "資源管理者略称":
-			info.Ryakusho = dataStr
-		case "アドレス種別":
-			info.Type = dataStr
-		case "インフラ・ユーザ区分":
-			info.InfraUserKind = dataStr
-		case "ネットワーク名":
-			info.NetworkName = dataStr
-		case "組織名":
-			info.Org = dataStr
-		case "Organization":
-			info.OrgEn = dataStr
-		case "郵便番号":
-			info.PostCode = dataStr
-		case "住所":
-			info.Address = dataStr
-		case "Address":
-			info.AddressEn = dataStr
-		case "管理者連絡窓口":
-			info.AdminJPNICHandle = dataStr
-			info.AdminJPNICHandleLink, _ = tableHtml1.Find("a").Attr("href")
-		case "技術連絡担当者":
-			info.TechJPNICHandle = dataStr
-			info.TechJPNICHandleLink, _ = tableHtml1.Find("a").Attr("href")
-		case "ネームサーバ":
-			info.NameServer = dataStr
-		case "DSレコード":
-			info.DSRecord = dataStr
-		case "通知アドレス":
-			info.NotifyAddress = dataStr
-		case "審議番号":
-			info.DeliNo = dataStr
-		case "受付番号":
-			info.RecepNo = dataStr
-		case "割当年月日":
-			info.AssignDate = dataStr
-		case "返却年月日":
-			info.ReturnDate = dataStr
-		case "最終更新":
-			info.UpdateDate = dataStr
+			switch title {
+			case "IPネットワークアドレス":
+				info.IPAddress = dataStr
+			case "資源管理者略称":
+				info.Ryakusho = dataStr
+			case "アドレス種別":
+				info.Type = dataStr
+			case "インフラ・ユーザ区分":
+				info.InfraUserKind = dataStr
+			case "ネットワーク名":
+				info.NetworkName = dataStr
+			case "組織名":
+				info.Org = dataStr
+			case "Organization":
+				info.OrgEn = dataStr
+			case "郵便番号":
+				info.PostCode = dataStr
+			case "住所":
+				info.Address = dataStr
+			case "Address":
+				info.AddressEn = dataStr
+			case "管理者連絡窓口":
+				info.AdminJPNICHandle = dataStr
+				info.AdminJPNICHandleLink, _ = tableHtml1.Find("a").Attr("href")
+			case "技術連絡担当者":
+				tmpHandleLink, _ := tableHtml1.Find("a").Attr("href")
+				info.TechJPNICHandles = append(info.TechJPNICHandles, TechJPNICHandle{
+					TechJPNICHandle:     dataStr,
+					TechJPNICHandleLink: tmpHandleLink,
+				})
+			case "ネームサーバ":
+				info.NameServer = append(info.NameServer, dataStr)
+			case "DSレコード":
+				info.DSRecord = dataStr
+			case "通知アドレス":
+				info.NotifyAddress = dataStr
+			case "審議番号":
+				info.DeliNo = dataStr
+			case "受付番号":
+				info.RecepNo = dataStr
+			case "割当年月日":
+				info.AssignDate = dataStr
+			case "返却年月日":
+				info.ReturnDate = dataStr
+			case "最終更新":
+				info.UpdateDate = dataStr
+			}
 		}
 
 		isTitle = !isTitle
 	})
 
-	return info, err
+	fmt.Printf("(%%#v) %#v\n", info)
+
+	return info, nil
 }
 
 func getJPNICHandle(client *http.Client, handleURL string) (JPNICHandleDetail, error) {

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 )
 
 type Process interface {
@@ -149,8 +150,8 @@ func (v4 ipv4) getBaseData() error {
 		}
 		data, err := v4.base.jpnicConfig.SearchIPv4(filter)
 		if err != nil {
-			log.Println("Error", "SearchIPv4", err)
-			continue
+
+			return fmt.Errorf("[getBaseData,SearchIPv4] Error:  %s", err)
 		}
 
 		isOverList = data.IsOverList
@@ -199,7 +200,7 @@ func (v4 ipv4) getBaseData() error {
 			PostCode:           tmp.InfoDetail.PostCode,
 			Address:            tmp.InfoDetail.Address,
 			AddressEn:          tmp.InfoDetail.AddressEn,
-			NameServer:         tmp.InfoDetail.NameServer,
+			NameServer:         strings.Join(tmp.InfoDetail.NameServer, ","),
 			DsRecord:           tmp.InfoDetail.DSRecord,
 			NotifyAddress:      tmp.InfoDetail.NotifyAddress,
 			AdminJpnicId:       adminJpnicId,
@@ -228,8 +229,7 @@ func (v6 ipv6) getBaseData() error {
 		}
 		data, err := v6.base.jpnicConfig.SearchIPv6(filter)
 		if err != nil {
-			log.Println(err)
-			continue
+			return nil
 		}
 
 		isOverList = data.IsOverList
@@ -274,7 +274,7 @@ func (v6 ipv6) getBaseData() error {
 			PostCode:           tmp.InfoDetail.PostCode,
 			Address:            tmp.InfoDetail.Address,
 			AddressEn:          tmp.InfoDetail.AddressEn,
-			NameServer:         tmp.InfoDetail.NameServer,
+			NameServer:         strings.Join(tmp.InfoDetail.NameServer, ","),
 			DsRecord:           tmp.InfoDetail.DSRecord,
 			NotifyAddress:      tmp.InfoDetail.NotifyAddress,
 			AdminJpnicId:       adminJpnicId,
@@ -341,7 +341,11 @@ func (v4 ipv4) getDetail(strHandles []string, handles map[string]uint, ids []uin
 
 	// jpnic_handle DBに追加処理
 	if data != nil && len(data.JPNICHandleDetail) != 0 {
+		//log.Println("AdminJPNICHandle", data.InfoIPv4[0].InfoDetail.AdminJPNICHandle)
+		//log.Println("TechJPNICHandle", data.InfoIPv4[0].InfoDetail.TechJPNICHandles)
+		//log.Println("data.JPNICHandleDetail", data.JPNICHandleDetail)
 		for _, jpnicHandle := range data.JPNICHandleDetail {
+			//fmt.Printf("%#v\n", jpnicHandle)
 			resultJPNICHandle, err := v4.base.db.CreateJPNICHandle(database.JPNICHandle{
 				GetStartDate: etc.GetTimeDate(),
 				GetDate:      etc.GetTimeDate(),
@@ -371,52 +375,54 @@ func (v4 ipv4) getDetail(strHandles []string, handles map[string]uint, ids []uin
 
 	// Base情報を取得後に返却した場合(JPNIC Handleが消えた場合)
 	if data == nil {
-		for _, id := range ids {
-			err = v4.base.db.UpdateV4List(database.V4List{
-				ID:         id,
-				GetDate:    etc.GetTimeDate(),
-				IsDisabled: true,
-				IsGet:      false,
-				AsnId:      v4.base.cert.Base.ID,
-			})
+		err = v4.base.db.UpdateV4List(ids, database.V4List{
+			GetDate:    etc.GetTimeDate(),
+			IsDisabled: true,
+			IsGet:      false,
+			AsnId:      v4.base.cert.Base.ID,
+		})
+		if err != nil {
+			return err
 		}
+		return nil
 	}
 
 	// result_v4list DBにUpdate処理
+	err = v4.base.db.UpdateV4List(ids, database.V4List{
+		GetDate:       etc.GetTimeDate(),
+		IsDisabled:    false,
+		IsGet:         false,
+		Org:           data.InfoIPv4[0].InfoDetail.Org,
+		OrgEn:         data.InfoIPv4[0].InfoDetail.OrgEn,
+		PostCode:      data.InfoIPv4[0].InfoDetail.PostCode,
+		Address:       data.InfoIPv4[0].InfoDetail.Address,
+		AddressEn:     data.InfoIPv4[0].InfoDetail.AddressEn,
+		NameServer:    strings.Join(data.InfoIPv4[0].InfoDetail.NameServer, ","),
+		DsRecord:      data.InfoIPv4[0].InfoDetail.DSRecord,
+		NotifyAddress: data.InfoIPv4[0].InfoDetail.NotifyAddress,
+		AdminJpnicId:  &[]uint{handles[data.InfoIPv4[0].InfoDetail.AdminJPNICHandle]}[0],
+		AsnId:         v4.base.cert.Base.ID,
+	})
+	if err != nil {
+		log.Println("Error", "update result_jpnichandle", err)
+		return err
+	}
+	// JPNIC技術連絡先をDBに登録
+	v4TechJPNICLists := []database.V4TechJPNICLists{}
 	for _, id := range ids {
-		err = v4.base.db.UpdateV4List(database.V4List{
-			ID:            id,
-			GetDate:       etc.GetTimeDate(),
-			IsDisabled:    false,
-			IsGet:         false,
-			Org:           data.InfoIPv4[0].InfoDetail.Org,
-			OrgEn:         data.InfoIPv4[0].InfoDetail.OrgEn,
-			PostCode:      data.InfoIPv4[0].InfoDetail.PostCode,
-			Address:       data.InfoIPv4[0].InfoDetail.Address,
-			AddressEn:     data.InfoIPv4[0].InfoDetail.AddressEn,
-			NameServer:    data.InfoIPv4[0].InfoDetail.NameServer,
-			DsRecord:      data.InfoIPv4[0].InfoDetail.DSRecord,
-			NotifyAddress: data.InfoIPv4[0].InfoDetail.NotifyAddress,
-			AdminJpnicId:  &[]uint{handles[data.InfoIPv4[0].InfoDetail.AdminJPNICHandle]}[0],
-			AsnId:         v4.base.cert.Base.ID,
-		})
-		if err != nil {
-			log.Println("Error", "update result_jpnichandle", err)
-			return err
-		}
-
-		// JPNIC技術連絡先をDBに登録
-		//for _, techHandle := range data[0].InfoDetail.TechJPNICHandle {
-
-		_, err = v4.base.db.CreateResultV4ListTechJPNIC(database.V4TechJPNICLists{
-			V4ListId:      id,
-			JpnicHandleId: handles[data.InfoIPv4[0].InfoDetail.TechJPNICHandle],
-		})
-		if err != nil {
-			log.Println("Error", "prepare(INSERT) result_v4list_tech_jpnic", err)
-			return err
+		for _, techJPNICHandle := range data.InfoIPv4[0].InfoDetail.TechJPNICHandles {
+			v4TechJPNICLists = append(v4TechJPNICLists, database.V4TechJPNICLists{
+				V4ListId:      id,
+				JpnicHandleId: handles[techJPNICHandle.TechJPNICHandle],
+			})
 		}
 	}
+	_, err = v4.base.db.CreateResultV4ListTechJPNIC(v4TechJPNICLists)
+	if err != nil {
+		log.Println("Error", "prepare(INSERT) result_v4list_tech_jpnic", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -463,50 +469,53 @@ func (v6 ipv6) getDetail(strHandles []string, handles map[string]uint, ids []uin
 
 	// Base情報を取得後に返却した場合(JPNIC Handleが消えた場合)
 	if data == nil {
-		for _, id := range ids {
-			err = v6.base.db.UpdateV6List(database.V6List{
-				ID:         id,
-				GetDate:    etc.GetTimeDate(),
-				IsDisabled: true,
-				IsGet:      false,
-				AsnId:      v6.base.cert.Base.ID,
-			})
+		err = v6.base.db.UpdateV6List(ids, database.V6List{
+			GetDate:    etc.GetTimeDate(),
+			IsDisabled: true,
+			IsGet:      false,
+			AsnId:      v6.base.cert.Base.ID,
+		})
+		if err != nil {
+			return err
 		}
+		return nil
 	}
 
 	// result_v6list DBにUpdate処理
+	err = v6.base.db.UpdateV6List(ids, database.V6List{
+		GetDate:       etc.GetTimeDate(),
+		IsDisabled:    false,
+		IsGet:         false,
+		Org:           data.InfoIPv6[0].InfoDetail.Org,
+		OrgEn:         data.InfoIPv6[0].InfoDetail.OrgEn,
+		PostCode:      data.InfoIPv6[0].InfoDetail.PostCode,
+		Address:       data.InfoIPv6[0].InfoDetail.Address,
+		AddressEn:     data.InfoIPv6[0].InfoDetail.AddressEn,
+		NameServer:    strings.Join(data.InfoIPv6[0].InfoDetail.NameServer, ","),
+		DsRecord:      data.InfoIPv6[0].InfoDetail.DSRecord,
+		NotifyAddress: data.InfoIPv6[0].InfoDetail.NotifyAddress,
+		AdminJpnicId:  &[]uint{handles[data.InfoIPv6[0].InfoDetail.AdminJPNICHandle]}[0],
+		AsnId:         v6.base.cert.Base.ID,
+	})
+	if err != nil {
+		log.Println("Error", "update result_jpnichandle", err)
+		return err
+	}
+	// JPNIC技術連絡先をDBに登録
+	v6TechJPNICLists := []database.V6TechJPNICLists{}
 	for _, id := range ids {
-		err = v6.base.db.UpdateV6List(database.V6List{
-			ID:            id,
-			GetDate:       etc.GetTimeDate(),
-			IsDisabled:    false,
-			IsGet:         false,
-			Org:           data.InfoIPv6[0].InfoDetail.Org,
-			OrgEn:         data.InfoIPv6[0].InfoDetail.OrgEn,
-			PostCode:      data.InfoIPv6[0].InfoDetail.PostCode,
-			Address:       data.InfoIPv6[0].InfoDetail.Address,
-			AddressEn:     data.InfoIPv6[0].InfoDetail.AddressEn,
-			NameServer:    data.InfoIPv6[0].InfoDetail.NameServer,
-			DsRecord:      data.InfoIPv6[0].InfoDetail.DSRecord,
-			NotifyAddress: data.InfoIPv6[0].InfoDetail.NotifyAddress,
-			AdminJpnicId:  &[]uint{handles[data.InfoIPv6[0].InfoDetail.AdminJPNICHandle]}[0],
-			AsnId:         v6.base.cert.Base.ID,
-		})
-		if err != nil {
-			log.Println("Error", "update result_jpnichandle", err)
-			return err
-		}
-		// JPNIC技術連絡先をDBに登録
-		//for _, techHandle := range data[0].InfoDetail.TechJPNICHandle {
-
-		_, err = v6.base.db.CreateResultV6ListTechJPNIC(database.V6TechJPNICLists{
-			V6ListId:      id,
-			JpnicHandleId: handles[data.InfoIPv6[0].InfoDetail.TechJPNICHandle],
-		})
-		if err != nil {
-			log.Println("Error", "prepare(INSERT) result_v4list_tech_jpnic", err)
-			return err
+		for _, techJPNICHandle := range data.InfoIPv6[0].InfoDetail.TechJPNICHandles {
+			v6TechJPNICLists = append(v6TechJPNICLists, database.V6TechJPNICLists{
+				V6ListId:      id,
+				JpnicHandleId: handles[techJPNICHandle.TechJPNICHandle],
+			})
 		}
 	}
+	_, err = v6.base.db.CreateResultV6ListTechJPNIC(v6TechJPNICLists)
+	if err != nil {
+		log.Println("Error", "prepare(INSERT) result_v4list_tech_jpnic", err)
+		return err
+	}
+
 	return nil
 }

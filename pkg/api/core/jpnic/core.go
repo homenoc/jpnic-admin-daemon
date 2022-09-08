@@ -340,56 +340,56 @@ func Search(resBody string) (InfoDetail, []ResourceAddressList, error) {
 
 	// ネットワーク情報の取得
 	doc.Find("table").Children().Find("table").Children().Find("table").Children().Find("table").Children().Find("td").Each(func(_ int, tableHtml1 *goquery.Selection) {
-		dataStr := strings.TrimSpace(tableHtml1.Text())
-		beforeDataStr := strings.TrimSpace(tableHtml1.Prev().Text())
-
-		switch beforeDataStr {
-		case "IPネットワークアドレス":
-			addressInfo.IPAddress = dataStr
-		case "資源管理者略称":
-			addressInfo.Ryakusho = dataStr
-		case "アドレス種別":
-			addressInfo.Type = dataStr
-		case "インフラ・ユーザ区分":
-			addressInfo.InfraUserKind = dataStr
-		case "ネットワーク名":
-			addressInfo.NetworkName = dataStr
-		case "組織名":
-			addressInfo.Org = dataStr
-		case "Organization":
-			addressInfo.OrgEn = dataStr
-		case "郵便番号":
-			addressInfo.PostCode = dataStr
-		case "住所":
-			addressInfo.Address = dataStr
-		case "Address":
-			addressInfo.AddressEn = dataStr
-		case "管理者連絡窓口":
-			addressInfo.AdminJPNICHandleLink, _ = tableHtml1.Find("a").Attr("href")
-			addressInfo.AdminJPNICHandle = dataStr
-		case "技術連絡担当者":
-			addressInfo.TechJPNICHandleLink, _ = tableHtml1.Find("a").Attr("href")
-			addressInfo.TechJPNICHandle = dataStr
-		case "Abuse":
-			addressInfo.Abuse = dataStr
-		case "通知アドレス":
-			addressInfo.NotifyAddress = dataStr
-		case "ネームサーバ":
-			addressInfo.NameServer = dataStr
-		case "DSレコード":
-			addressInfo.DSRecord = dataStr
-		case "審議番号":
-			addressInfo.DeliNo = dataStr
-		case "受付番号":
-			addressInfo.RecepNo = dataStr
-		case "割振年月日", "割当年月日":
-			addressInfo.AssignDate = dataStr
-		case "返却年月日":
-			addressInfo.ReturnDate = dataStr
-		case "最終更新":
-			addressInfo.UpdateDate = dataStr
-		default:
-		}
+		//dataStr := strings.TrimSpace(tableHtml1.Text())
+		//beforeDataStr := strings.TrimSpace(tableHtml1.Prev().Text())
+		//
+		//switch beforeDataStr {
+		//case "IPネットワークアドレス":
+		//	addressInfo.IPAddress = dataStr
+		//case "資源管理者略称":
+		//	addressInfo.Ryakusho = dataStr
+		//case "アドレス種別":
+		//	addressInfo.Type = dataStr
+		//case "インフラ・ユーザ区分":
+		//	addressInfo.InfraUserKind = dataStr
+		//case "ネットワーク名":
+		//	addressInfo.NetworkName = dataStr
+		//case "組織名":
+		//	addressInfo.Org = dataStr
+		//case "Organization":
+		//	addressInfo.OrgEn = dataStr
+		//case "郵便番号":
+		//	addressInfo.PostCode = dataStr
+		//case "住所":
+		//	addressInfo.Address = dataStr
+		//case "Address":
+		//	addressInfo.AddressEn = dataStr
+		//case "管理者連絡窓口":
+		//	addressInfo.AdminJPNICHandleLink, _ = tableHtml1.Find("a").Attr("href")
+		//	addressInfo.AdminJPNICHandle = dataStr
+		//case "技術連絡担当者":
+		//	addressInfo.TechJPNICHandleLink, _ = tableHtml1.Find("a").Attr("href")
+		//	addressInfo.TechJPNICHandle = dataStr
+		//case "Abuse":
+		//	addressInfo.Abuse = dataStr
+		//case "通知アドレス":
+		//	addressInfo.NotifyAddress = dataStr
+		//case "ネームサーバ":
+		//	addressInfo.NameServer = dataStr
+		//case "DSレコード":
+		//	addressInfo.DSRecord = dataStr
+		//case "審議番号":
+		//	addressInfo.DeliNo = dataStr
+		//case "受付番号":
+		//	addressInfo.RecepNo = dataStr
+		//case "割振年月日", "割当年月日":
+		//	addressInfo.AssignDate = dataStr
+		//case "返却年月日":
+		//	addressInfo.ReturnDate = dataStr
+		//case "最終更新":
+		//	addressInfo.UpdateDate = dataStr
+		//default:
+		//}
 		//if cidrBlockSegment && index == 2 {
 		//	info.ResourceCIDRBlock = append(info.ResourceCIDRBlock, cidrBlock)
 		//}

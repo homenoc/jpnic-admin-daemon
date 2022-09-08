@@ -59,7 +59,7 @@ func (b *Base) GetRangeV6ListByRecepNumber(getStartDate, getEndDate, recepNumber
 	result := b.DB.Table("result_v6list").Select("id", "ip_address", "recep_number").
 		Where("get_start_date >= ? AND get_start_date < ? AND is_get = ? AND is_disabled = ? AND asn_id = ? AND recep_number = ?",
 			getStartDate, getEndDate, true, false, AsnID, recepNumber).
-		First(&jpnicHandleList)
+		Find(&jpnicHandleList)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return jpnicHandleList, nil
@@ -70,8 +70,8 @@ func (b *Base) GetRangeV6ListByRecepNumber(getStartDate, getEndDate, recepNumber
 	return jpnicHandleList, nil
 }
 
-func (b *Base) UpdateV6List(list V6List) error {
-	result := b.DB.Table("result_v6list").Model(&V6List{ID: list.ID}).
+func (b *Base) UpdateV6List(ids []uint, list V6List) error {
+	result := b.DB.Table("result_v6list").Where("id IN ?", ids).
 		Updates(map[string]interface{}{
 			"get_date":       list.GetDate,
 			"is_disabled":    list.IsDisabled,
