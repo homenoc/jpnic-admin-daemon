@@ -33,7 +33,7 @@ type ipv6 struct {
 }
 
 func (v4 *ipv4) getBaseIPList() error {
-	list, err := v4.base.db.GetRangeV4List(v4.base.todayStartTime, v4.base.cert.Base.ID)
+	list, err := v4.base.db.GetRangeV4List(v4.base.todayStartTime, v4.base.todayEndTime, v4.base.cert.Base.ID)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (v4 *ipv4) getBaseIPList() error {
 }
 
 func (v6 *ipv6) getBaseIPList() error {
-	list, err := v6.base.db.GetRangeV6List(v6.base.todayStartTime, v6.base.cert.Base.ID)
+	list, err := v6.base.db.GetRangeV6List(v6.base.todayStartTime, v6.base.todayEndTime, v6.base.cert.Base.ID)
 	if err != nil {
 		return err
 	}
@@ -182,6 +182,8 @@ func (v4 ipv4) getBaseData() error {
 		_, err := v4.base.db.CreateResultV4List(database.V4List{
 			GetStartDate:       etc.GetTimeDate(),
 			GetDate:            etc.GetTimeDate(),
+			IsDisabled:         false,
+			IsGet:              true,
 			IpAddress:          tmp.IPAddress,
 			Size:               uint(sizeNum),
 			NetworkName:        tmp.NetworkName,
@@ -258,6 +260,8 @@ func (v6 ipv6) getBaseData() error {
 		_, err := v6.base.db.CreateResultV6List(database.V6List{
 			GetStartDate:       etc.GetTimeDate(),
 			GetDate:            etc.GetTimeDate(),
+			IsDisabled:         false,
+			IsGet:              true,
 			IpAddress:          tmp.IPAddress,
 			NetworkName:        tmp.NetworkName,
 			AssignDate:         tmp.AssignDate,
@@ -300,7 +304,7 @@ func (v6 ipv6) irregularCheck() error {
 func (v4 ipv4) getSameRecepNumID() ([]uint, error) {
 	// 同じ受付番号がないか確認
 	var idList []uint
-	listsByRecpNum, err := v4.base.db.GetRangeV4ListByRecepNumber(v4.base.todayStartTime, v4.baseV4List.RecepNumber, v4.base.cert.Base.ID)
+	listsByRecpNum, err := v4.base.db.GetRangeV4ListByRecepNumber(v4.base.todayStartTime, v4.base.todayEndTime, v4.baseV4List.RecepNumber, v4.base.cert.Base.ID)
 	if err != nil {
 		return idList, err
 	}
@@ -313,7 +317,7 @@ func (v4 ipv4) getSameRecepNumID() ([]uint, error) {
 func (v6 ipv6) getSameRecepNumID() ([]uint, error) {
 	// 同じ受付番号がないか確認
 	var idList []uint
-	listsByRecpNum, err := v6.base.db.GetRangeV6ListByRecepNumber(v6.base.todayStartTime, v6.baseV6List.RecepNumber, v6.base.cert.Base.ID)
+	listsByRecpNum, err := v6.base.db.GetRangeV6ListByRecepNumber(v6.base.todayStartTime, v6.base.todayEndTime, v6.baseV6List.RecepNumber, v6.base.cert.Base.ID)
 	if err != nil {
 		return idList, err
 	}
@@ -341,6 +345,8 @@ func (v4 ipv4) getDetail(strHandles []string, handles map[string]uint, ids []uin
 			resultJPNICHandle, err := v4.base.db.CreateJPNICHandle(database.JPNICHandle{
 				GetStartDate: etc.GetTimeDate(),
 				GetDate:      etc.GetTimeDate(),
+				IsDisabled:   false,
+				IsGet:        false,
 				IsIpv6:       false,
 				JPNICHandle:  jpnicHandle.JPNICHandle,
 				Name:         jpnicHandle.Name,
@@ -363,11 +369,26 @@ func (v4 ipv4) getDetail(strHandles []string, handles map[string]uint, ids []uin
 		}
 	}
 
+	// Base情報を取得後に返却した場合(JPNIC Handleが消えた場合)
+	if data == nil {
+		for _, id := range ids {
+			err = v4.base.db.UpdateV4List(database.V4List{
+				ID:         id,
+				GetDate:    etc.GetTimeDate(),
+				IsDisabled: true,
+				IsGet:      false,
+				AsnId:      v4.base.cert.Base.ID,
+			})
+		}
+	}
+
 	// result_v4list DBにUpdate処理
 	for _, id := range ids {
 		err = v4.base.db.UpdateV4List(database.V4List{
 			ID:            id,
 			GetDate:       etc.GetTimeDate(),
+			IsDisabled:    false,
+			IsGet:         false,
 			Org:           data.InfoIPv4[0].InfoDetail.Org,
 			OrgEn:         data.InfoIPv4[0].InfoDetail.OrgEn,
 			PostCode:      data.InfoIPv4[0].InfoDetail.PostCode,
@@ -417,6 +438,8 @@ func (v6 ipv6) getDetail(strHandles []string, handles map[string]uint, ids []uin
 			resultJPNICHandle, err := v6.base.db.CreateJPNICHandle(database.JPNICHandle{
 				GetStartDate: etc.GetTimeDate(),
 				GetDate:      etc.GetTimeDate(),
+				IsDisabled:   false,
+				IsGet:        false,
 				IsIpv6:       false,
 				JPNICHandle:  jpnicHandle.JPNICHandle,
 				Name:         jpnicHandle.Name,
@@ -438,11 +461,26 @@ func (v6 ipv6) getDetail(strHandles []string, handles map[string]uint, ids []uin
 		}
 	}
 
+	// Base情報を取得後に返却した場合(JPNIC Handleが消えた場合)
+	if data == nil {
+		for _, id := range ids {
+			err = v6.base.db.UpdateV6List(database.V6List{
+				ID:         id,
+				GetDate:    etc.GetTimeDate(),
+				IsDisabled: true,
+				IsGet:      false,
+				AsnId:      v6.base.cert.Base.ID,
+			})
+		}
+	}
+
 	// result_v6list DBにUpdate処理
 	for _, id := range ids {
 		err = v6.base.db.UpdateV6List(database.V6List{
 			ID:            id,
 			GetDate:       etc.GetTimeDate(),
+			IsDisabled:    false,
+			IsGet:         false,
 			Org:           data.InfoIPv6[0].InfoDetail.Org,
 			OrgEn:         data.InfoIPv6[0].InfoDetail.OrgEn,
 			PostCode:      data.InfoIPv6[0].InfoDetail.PostCode,

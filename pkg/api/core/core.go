@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"github.com/homenoc/jpnic-admin-daemon/pkg/api/core/database"
 	"github.com/homenoc/jpnic-admin-daemon/pkg/api/core/jpnic"
 	"github.com/homenoc/jpnic-admin-daemon/pkg/api/core/tool/config"
@@ -174,17 +173,18 @@ func (b *base) GetJPNICProcess(p Process) error {
 		return err
 	}
 
-	// 本日分取得後に再度取得しないようにする
-	isExists, err := checkJPNICDataExists(p)
-	if err != nil {
-		return err
-	}
-	if isExists {
-		return fmt.Errorf("This is not error!!: (no need to get data.) ")
-	}
-
 	// 全体取得データがない場合
 	if p.emptyCheck() {
+		//本日分取得後に再度取得しないようにする
+		isExists, err := checkJPNICDataExists(p)
+		if err != nil {
+			return err
+		}
+		if isExists {
+			//log.Println("This is not error!!: (no need to get data.)")
+			return nil
+		}
+
 		err = p.getBaseData()
 		if err != nil {
 			return err
@@ -203,7 +203,7 @@ func (b *base) GetJPNICProcess(p Process) error {
 		}
 
 		// JPNIC Handle探索
-		jpnicHandles, err := b.db.GetRangeJPNICHandle(b.todayStartTime, b.cert.Base.ID, p.getIPv6())
+		jpnicHandles, err := b.db.GetRangeJPNICHandle(b.todayStartTime, b.todayEndTime, b.cert.Base.ID, p.getIPv6())
 		if err != nil {
 			log.Println(err)
 			return err

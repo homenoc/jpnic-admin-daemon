@@ -16,6 +16,8 @@ type JPNICHandle struct {
 	ID           uint
 	GetStartDate string
 	GetDate      string
+	IsDisabled   bool
+	IsGet        bool
 	IsIpv6       bool
 	JPNICHandle  string `gorm:"column:jpnic_handle"`
 	Name         string
@@ -35,6 +37,8 @@ type V4List struct {
 	ID                 uint
 	GetStartDate       string
 	GetDate            string
+	IsDisabled         bool
+	IsGet              bool
 	IpAddress          string
 	Size               uint
 	NetworkName        string
@@ -61,6 +65,8 @@ type V6List struct {
 	ID                 uint
 	GetStartDate       string
 	GetDate            string
+	IsDisabled         bool
+	IsGet              bool
 	IpAddress          string
 	NetworkName        string
 	AssignDate         string
