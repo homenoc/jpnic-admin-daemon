@@ -18,7 +18,7 @@ func (b *Base) GetV4JPNICDataReceivedCount(getStartDate, getEndDate string, AsnI
 	var counter int64
 	result := b.DB.Table("result_v4list").Select("id", "ip_address", "recep_number").
 		Where("get_start_date >= ? AND get_start_date < ? AND asn_id = ? AND is_get = ? AND is_disabled = ?",
-			getStartDate, getEndDate, AsnID, false, true).Count(&counter)
+			getStartDate, getEndDate, AsnID, false, false).Count(&counter)
 	if result.Error != nil {
 		return counter, result.Error
 	}
